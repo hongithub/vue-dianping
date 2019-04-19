@@ -17,7 +17,7 @@ export default {
   top: 0;
   right: 0;
   bottom: 0;
-  z-index: 9;
+  z-index: 999;
   @include frow();
   .text {
     max-width: 200px;

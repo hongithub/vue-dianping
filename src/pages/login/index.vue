@@ -13,13 +13,13 @@
         </div>
         <div class="input-box">
           <i class="iconfont icon-password"></i>
-          <input class="input" type="password" v-model.trim="form.password" placeholder="请输入密码">
+          <input class="input" type="password" v-model.trim="form.password" placeholder="请输入密码" @keyup.enter="handleLogin">
         </div>
-        <div class="btn-login" @click="handlerLogin">登录</div>
+        <div class="btn-login" @click="handleLogin">登录</div>
       </div>
     </Scroll>
     <template v-else>
-      <div class="tips">正在生成虚拟登录信息，请稍候</div>
+      <div class="loading-box">正在生成虚拟登录信息，请稍候</div>
       <Loading></Loading>
     </template>
   </div>
@@ -31,6 +31,7 @@ import Loading from '@/components/loading';
 
 export default {
   name: 'Login',
+  components: { Header, Loading },
   data() {
     return {
       form: {
@@ -47,30 +48,10 @@ export default {
     };
   },
   mounted() {
-    this.handlerFetchData();
+    this.handleFetchData();
   },
   methods: {
-    async handlerFetchData() {
-      try {
-        if (this.isAjax) {
-          return;
-        }
-
-        this.isAjax = true;
-        let res = await this.$http.get(this.$api.user);
-        this.isAjax = false;
-        if (res.name) {
-          this.user = { avatar: res.photo, name: res.name };
-          this.form = { username: res.surname, password: res.password };
-        } else {
-          this.$toast({ msg: '程序员罢工，信息生成失败' });
-        }
-      } catch (e) {
-        this.isAjax = false;
-        this.$toast({ msg: '网络开小差，请重试' });
-      }
-    },
-    handlerLogin() {
+    handleLogin() {
       if (!this.form.username || !this.form.password) {
         this.isError = true;
         return this.$toast({
@@ -78,21 +59,42 @@ export default {
           callback: () => (this.isError = false)
         });
       }
-      this.$store.commit('$handlerLogin', { isLogin: 1, userInfo: this.user });
-      this.$router.replace({ path: this.$route.query.redirect || '/' });
+      this.$store.commit('$handleLogin', { isLogin: 1, userInfo: this.user });
+      this.$router.replace({ path: '/' });
+    },
+    async handleFetchData() {
+      try {
+        if (this.isAjax) {
+          return;
+        }
+
+        this.isAjax = true;
+        let res = await this.$http({ url: this.$api.user });
+        this.isAjax = false;
+
+        if (res.name) {
+          this.user = { avatar: res.photo, name: res.name };
+          this.form = { username: res.surname, password: res.password };
+        } else {
+          this.$toast({ msg: '攻城狮罢工，信息生成失败' });
+        }
+      } catch (e) {
+        this.isAjax = false;
+        this.$toast({ msg: this.$api.msg });
+      }
     }
-  },
-  components: { Header, Loading }
+  }
 };
 </script>
 
 <style lang="scss" scoped>
 .login-wrap {
+  height: 100vh;
+  font-size: 14px;
+  color: $fs333;
   .form-box {
     @include fcol(flex-start);
     padding: 30px 0 20px;
-    font-size: 14px;
-    color: $fs999;
     &.shake {
       animation: ani-shake 0.5s;
     }
@@ -109,10 +111,7 @@ export default {
       }
     }
     .name {
-      @include frow(center, stretch);
-      width: 100%;
       margin-top: 10px;
-      color: $fs333;
     }
     .input-box {
       @include frow(flex-start);
@@ -125,7 +124,6 @@ export default {
       .iconfont {
         margin-left: 10px;
         font-size: 18px;
-        color: $fs999;
       }
       .input {
         @include frow(flex-start);
@@ -145,11 +143,9 @@ export default {
       background: $bgf33;
     }
   }
-  .tips {
-    @include fcol(flex-start);
-    padding: 80px 0 20px;
-    font-size: 14px;
-    color: $fs333;
+  .loading-box {
+    @include frow();
+    height: 100px;
   }
 }
 @keyframes ani-shake {
